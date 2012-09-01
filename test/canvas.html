@@ -1,0 +1,325 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Touch Testing Canvas</title>
+	<meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=no;">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black">
+	<style>
+body 
+{
+	font-family: sans-serif;
+	font-size: 16px;
+}
+
+body > .page 
+{
+	position: absolute;
+	/*top: 48px;
+	right: 5%;
+	bottom: 48px;
+	left: 20%;*/
+	top: 0px;
+	right: 0px;
+	bottom: 0px;
+	left: 0px;
+}
+
+#sandbox 
+{
+	position: absolute;
+	top: 0px;
+	right: 0px;
+	bottom: 0px;
+	left: 0px;
+
+	/*border: 2px solid black;*/
+}
+
+#sandbox circle.touch 
+{
+	fill: #0028b7;
+}
+
+#sandbox circle.tap 
+{
+	stroke: #39d600;
+	stroke-width: 1px;
+	fill: transparent;
+}
+
+#sandbox circle.base 
+{
+	fill: #ff5858;
+}
+
+#sandbox circle.splay 
+{
+	stroke: #60009d;
+	stroke-width: 4px;
+	fill: transparent;
+}
+
+#sandbox text.splay
+{
+	fill: #60009d;
+	font-size: 16pt;
+	font-family: Arial, sans-serif;
+	text-anchor: middle;
+}
+
+#sandbox line
+{
+	stroke: #ff5858;
+	stroke-width: 2px;
+}
+
+#sandbox text.pinch
+{
+	fill: #ff5858;
+	font-size: 16pt;
+	font-family: Arial, sans-serif;
+	text-anchor: middle;
+}
+
+#sandbox text.drag
+{
+	fill: #ff5858;
+	font-size: 16pt;
+	font-family: Arial, sans-serif;
+	text-anchor: middle;
+}
+	</style>
+	<script src="jquery.min.js"></script>
+	<script src="../pointgeo.js"></script>
+	<script src="../touch.js"></script>
+	<script>
+		var SVG_NS = 'http://www.w3.org/2000/svg';
+
+		$(function (event) {
+			var sandbox = $('#sandbox')[0];
+
+			$(sandbox).on({
+				'touchstart': function (event) {
+					for (var i = 0; i < event.originalEvent.changedTouches.length; ++i) {
+						var touch = event.originalEvent.changedTouches[i];
+						$(document.createElementNS(SVG_NS, 'circle'))
+							.attr({
+								id: 'touch' + touch.identifier,
+								class: 'touch',
+								cx: touch.clientX + 'px',
+								cy: touch.clientY + 'px',
+								r: '24px'
+							})
+							.appendTo(sandbox);
+					}
+				},
+				'touchmove': function (event) {
+					for (var i = 0; i < event.originalEvent.changedTouches.length; ++i) {
+						var touch = event.originalEvent.changedTouches[i];
+						$('#touch' + touch.identifier).attr({
+							cx: touch.clientX + 'px',
+							cy: touch.clientY + 'px'
+						});
+					}
+				},
+				'touchend': function (event) {
+					for (var i = 0; i < event.originalEvent.changedTouches.length; ++i) {
+						var touch = event.originalEvent.changedTouches[i];
+						$('#touch' + touch.identifier).remove();
+					}
+				},
+				'touchcancel': function (event) {
+					for (var i = 0; i < event.originalEvent.changedTouches.length; ++i) {
+						var touch = event.originalEvent.changedTouches[i];
+						$('#touch' + touch.identifier).remove();
+					}
+				},
+				'tap': function (event, touch) {
+					var $tap = $(document.createElementNS(SVG_NS, 'circle'))
+						.attr({
+							id: 'tap' + touch.identifier,
+							class: 'tap',
+							cx: touch.xLast + 'px',
+							cy: touch.yLast + 'px',
+							r: '24px',
+							opacity: '1'
+						}).appendTo(sandbox);
+
+					var radius = 24,
+						opacity = 1;
+
+					var interval = window.setInterval(function (delay) {
+						radius += 2;
+						opacity -= .02;
+						$tap.attr({
+							r: radius + 'px',
+							opacity: opacity
+						});
+						if (radius >= 124 || opacity <= 0) {
+							window.clearInterval(interval);
+							$tap.remove();
+						}
+					}, 50);
+				},
+				'dragstart': function (event, touch) {
+					$('#dragBase, #dragLine, #dragText').remove();
+
+					$(document.createElementNS(SVG_NS, 'circle'))
+						.attr({
+							id: 'dragBase',
+							class: 'drag base',
+							cx: touch.xStart + 'px',
+							cy: touch.yStart + 'px',
+							r: '8px'
+						})
+						.appendTo(sandbox);
+
+					$(document.createElementNS(SVG_NS, 'line'))
+						.attr({
+							id: 'dragLine',
+							class: 'drag line',
+							x1: touch.xStart + 'px',
+							y1: touch.yStart + 'px',
+							x2: touch.xLast + 'px',
+							y2: touch.yLast + 'px'
+						})
+						.appendTo(sandbox);
+
+					var textX = (touch.xStart + ((touch.xLast - touch.xStart) / 2)),
+						textY = (touch.yStart + ((touch.yLast - touch.yStart) / 2)),
+						vector = M.PointGeometry.vector(touch.xLast - touch.xStart, touch.yLast - touch.yStart);
+					$(document.createElementNS(SVG_NS, 'text'))
+						.attr({
+							id: 'dragText',
+							class: 'drag text',
+							x: textX + 'px',
+							y: textY + 'px',
+							transform: 'rotate(' + vector.headingInDegrees() + ' ' + textX + ' ' + textY + ')'
+						})
+						.text(Math.round(vector.magnitude()))
+						.appendTo(sandbox);
+				},
+				'drag': function (event, touch) {
+					$('#dragLine').attr({
+						x2: touch.xLast + 'px',
+						y2: touch.yLast + 'px'
+					});
+
+					var textX = (touch.xStart + ((touch.xLast - touch.xStart) / 2)),
+						textY = (touch.yStart + ((touch.yLast - touch.yStart) / 2)),
+						vector = M.PointGeometry.vector(touch.xLast - touch.xStart, touch.yLast - touch.yStart);
+					$('#dragText').attr({
+						x: textX + 'px',
+						y: textY + 'px',
+						transform: 'rotate(' + vector.headingInDegrees() + ' ' + textX + ' ' + textY + ')'
+					}).text(Math.round(vector.magnitude()));
+				},
+				'dragend': function (event, touch) {
+					$('#dragBase, #dragLine, #dragText').remove();
+				},
+				'dragcancel': function (event, touch) {
+					$('#dragBase, #dragLine, #dragText').remove();
+				},
+				'pinchstart': function (event, vector, touches) {
+					$('#pinchLine, #pinchText').remove();
+
+					$(document.createElementNS(SVG_NS, 'line'))
+						.attr({
+							id: 'pinchLine',
+							class: 'pinch',
+							x1: touches[0].xLast + 'px',
+							y1: touches[0].yLast + 'px',
+							x2: touches[1].xLast + 'px',
+							y2: touches[1].yLast + 'px'
+						})
+						.appendTo(sandbox);
+
+					var textX = (touches[0].xLast + ((touches[1].xLast - touches[0].xLast) / 2)),
+						textY = (touches[0].yLast + ((touches[1].yLast - touches[0].yLast) / 2));
+					$(document.createElementNS(SVG_NS, 'text'))
+						.attr({
+							id: 'pinchText',
+							class: 'pinch',
+							x: textX + 'px',
+							y: textY + 'px',
+							transform: 'rotate(' + vector.headingInDegrees() + ' ' + textX + ' ' + textY + ')'
+
+						})
+						.text(Math.round(vector.magnitude()))
+						.appendTo(sandbox);
+				},
+				'pinch': function (event, vector, touches) {
+					$('#pinchLine').attr({
+						x1: touches[0].xLast + 'px',
+						y1: touches[0].yLast + 'px',
+						x2: touches[1].xLast + 'px',
+						y2: touches[1].yLast + 'px'
+					});
+
+					var textX = (touches[0].xLast + ((touches[1].xLast - touches[0].xLast) / 2)),
+						textY = (touches[0].yLast + ((touches[1].yLast - touches[0].yLast) / 2));
+					$('#pinchText').attr({
+						x: textX + 'px',
+						y: textY + 'px',
+						transform: 'rotate(' + vector.headingInDegrees() + ' ' + textX + ' ' + textY + ')'
+					}).text(Math.round(vector.magnitude()));
+				},
+				'pinchend': function (event, vector, touches) {
+					$('#pinchLine, #pinchText').remove();
+				},
+				'pinchcancel': function (event, vector, touches) {
+					$('#pinchLine, #pinchText').remove();
+				},
+				'splaystart': function (event, circle, touches) {
+					$('#splayCircle, #splayText').remove();
+
+					$(document.createElementNS(SVG_NS, 'circle'))
+						.attr({
+							id: 'splayCircle',
+							class: 'splay',
+							cx: circle.center.x + 'px',
+							cy: circle.center.y + 'px',
+							r: circle.radius + 'px'
+						})
+						.appendTo(sandbox);
+
+					$(document.createElementNS(SVG_NS, 'text'))
+						.attr({
+							id: 'splayText',
+							class: 'splay',
+							x: circle.center.x + 'px',
+							y: circle.center.y + 'px'
+						})
+						.text(Math.round(circle.radius))
+						.appendTo(sandbox);
+				},
+				'splay': function (event, circle, touches) {
+					$('#splayCircle').attr({
+						cx: circle.center.x + 'px',
+						cy: circle.center.y + 'px',
+						r: circle.radius + 'px'
+					});
+
+					$('#splayText').attr({
+						x: circle.center.x + 'px',
+						y: circle.center.y + 'px'
+					}).text(Math.round(circle.radius));
+				},
+				'splayend': function (event, circle, touches) {
+					$('#splayCircle, #splayText').remove();
+				},
+				'splaycancel': function (event, circle, touches) {
+					$('#splayCircle, #splayText').remove();
+				}
+			});
+		});
+	</script>
+</head>
+<body>
+	<div class="page">
+		<svg xmlns="http://www.w3.org/2000/svg" version="1.1" id="sandbox"></svg>
+	</div>
+</body>
+</html>

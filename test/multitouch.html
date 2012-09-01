@@ -1,0 +1,136 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Multitouch Gesture Test Canvas</title>
+	<meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=no;">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black">
+	<style>
+body 
+{
+	font-family: sans-serif;
+	font-size: 16px;
+}
+
+body > .page 
+{
+	position: absolute;
+	top: 16px;
+	right: 16px;
+	bottom: 16px;
+	left: 16px;
+}
+
+#lights 
+{
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	width: 20%;
+	
+	margin: 0;
+	padding: 0;
+	
+	list-style: none;
+}
+
+#lights > li 
+{
+	position: relative;
+	margin: 1em;
+	padding: 1em;
+	border: 1px solid black;
+	
+	background-color: #ffffff;
+}
+
+#pinch > #distance, #splay > #radius
+{
+	display: block;
+	position: absolute;
+	top: 1em;
+	right: 1em;
+	bottom: 1em;
+}
+
+#sandbox 
+{
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 20%;
+	
+	font-size: 400%;
+	
+	box-sizing: border-box;
+	border: 1px solid black;
+	padding: 16px;
+}
+	</style>
+	<script src="jquery.min.js"></script>
+	<script src="../pointgeo.js"></script>
+	<script src="../touch.js"></script>
+	<script>
+		var highlight = function (element) {
+			$(element)
+				.stop(true)
+				.css({ 'background-color': '#e86a00'})
+				.delay(300)
+				.animate({ 'background-color': '#ffffff' }, 200, 'linear');
+		};
+
+		$(function (event) {
+			$('#sandbox').on({
+				'pinchstart': function (event, vector, touches) {
+					highlight('#pinch-start');
+				},
+				'pinch': function (event, vector, touches) {
+					highlight('#pinch');
+					$('#distance')
+						.stop(true, true)
+						.text(Math.round(vector.magnitude()))
+						.delay(300)
+						.animate({ 'color': 'transparent' }, 200, 'linear', function () { $(this).text(); });
+				},
+				'pinchend': function (event, vector, touches) {
+					highlight('#pinch-end');
+				},
+				'splaystart': function (event, circle, touches) {
+					highlight('#splay-start');
+				},
+				'splay': function (event, circle, touches) {
+					highlight('#splay');
+					$('#radius')
+						.stop(true, true)
+						.text(Math.round(circle.radius))
+						.delay(300)
+						.animate({ 'color': 'transparent' }, 200, 'linear', function () { $(this).text(); });
+				},
+				'splayend': function (event, circle, touches) {
+					highlight('#splay-end');
+				}
+			});
+
+			if (!Modernizr.touch) {
+				$('#sandbox').css({ 'color': '#ffffff', 'font-weight': 'bold', 'background-color': '#880000' }).text('Touch events are not supported on this device!');
+			}
+		});
+	</script>
+</head>
+<body>
+	<div class="page">
+		<ul id="lights">
+			<li id="pinch-start">pinch start</li>
+			<li id="pinch">pinch <span id="distance"></span></li>
+			<li id="pinch-end">pinch end</li>
+			<li id="splay-start">splay start</li>
+			<li id="splay">splay <span id="radius"></span></li>
+			<li id="splay-end">splay end</li>
+		</ul>
+		<div id="sandbox"></div>
+	</div>
+</body>
+</html>

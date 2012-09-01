@@ -1,0 +1,134 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Single Touch Gesture Test Canvas</title>
+	<meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=no;">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black">
+	<style>
+body 
+{
+	font-family: sans-serif;
+	font-size: 16px;
+}
+
+body > .page 
+{
+	position: absolute;
+	top: 16px;
+	right: 16px;
+	bottom: 16px;
+	left: 16px;
+}
+
+#lights 
+{
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	width: 20%;
+	
+	margin: 0;
+	padding: 0;
+	
+	list-style: none;
+}
+
+#lights > li 
+{
+	position: relative;
+	margin: 1em;
+	padding: 1em;
+	border: 1px solid black;
+	
+	background-color: #ffffff;
+}
+
+#drag > #duration, #flick > #heading
+{
+	display: block;
+	position: absolute;
+	top: 1em;
+	right: 1em;
+	bottom: 1em;
+}
+
+#sandbox 
+{
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 20%;
+	
+	font-size: 400%;
+	
+	box-sizing: border-box;
+	border: 1px solid black;
+	padding: 16px;
+}
+	</style>
+	<script src="jquery.min.js"></script>
+	<script src="../pointgeo.js"></script>
+	<script src="../touch.js"></script>
+	<script>
+		var highlight = function (element) {
+			$(element)
+				.stop(true, true)
+				.css({ 'background-color': '#e86a00'})
+				.delay(300)
+				.animate({ 'background-color': '#ffffff' }, 200, 'linear', function() { alert('done!'); });
+		};
+
+		$(function (event) {
+			$('#sandbox').on({
+				'tap': function (event) { highlight('#tap'); },
+				'dragstart': function (event) { highlight('#drag-start'); },
+				'dragend': function (event) { highlight('#drag-end'); },
+				'drag': function (event, touch) {
+					highlight('#drag');
+					$('#duration')
+						.stop(true, true)
+						.text(Math.round(touch.duration()) + 'ms')
+						.delay(300)
+						.animate({ 'color': 'transparent' }, 200, 'linear', function () { $(this).text(); });
+				},
+				'flick': function (event, touch) {
+					highlight('#flick');
+					$('#heading')
+						.stop(true, true)
+						.text(Math.round(touch.heading()) + '°')
+						.delay(300)
+						.animate({ 'color': 'transparent' }, 200, 'linear', function () { $(this).text(); });
+				},
+				'flickleft': function (event) { highlight('#flick-left'); },
+				'flickright': function (event) { highlight('#flick-right'); },
+				'flickup': function (event) { highlight('#flick-up'); },
+				'flickdown': function (event) { highlight('#flick-down'); }
+			});
+
+			if (!Modernizr.touch) {
+				$('#sandbox').css({ 'color': '#ffffff', 'font-weight': 'bold', 'background-color': '#880000' }).text('Touch events are not supported on this device!');
+			}
+		});
+	</script>
+</head>
+<body>
+	<div class="page">
+		<ul id="lights">
+			<li id="tap">tap</li>
+			<li id="drag-start">drag start</li>
+			<li id="drag">drag <span id="duration"></span></li>
+			<li id="drag-end">drag end</li>
+			<li id="flick">flick <span id="heading"></span></li>
+			<li id="flick-left">flick left</li>
+			<li id="flick-right">flick right</li>
+			<li id="flick-up">flick up</li>
+			<li id="flick-down">flick down</li>
+		</ul>
+		<div id="sandbox"></div>
+	</div>
+</body>
+</html>
